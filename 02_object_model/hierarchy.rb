@@ -68,7 +68,6 @@ class C3 < MySuperClass
   end
 end
 
-
 # Q4.
 # 次の動作をする C4 class のメソッド increment を実装する
 # - increment メソッドを呼ぶと value が +1 される
@@ -79,6 +78,15 @@ end
 #   c4.increment # => "3"
 # - 定義済みのメソッド (value, value=) は private のままとなっている
 class C4
+  def initialize
+    @value = 0
+  end
+
+  def increment
+    self.value = value + 1
+    value.to_s
+  end
+
   private
 
   attr_accessor :value
