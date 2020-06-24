@@ -6,3 +6,11 @@
 # - Class
 # - Hash
 # - TrueClass
+
+module HogeCallable
+	def hoge
+		'hoge'
+	end
+end
+
+[String, Integer, Numeric, Class, Hash, TrueClass].map { |klass| klass.class_eval{ include HogeCallable } }
