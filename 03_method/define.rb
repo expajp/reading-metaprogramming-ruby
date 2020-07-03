@@ -20,7 +20,7 @@ class A2
       self.class.class_eval do
         define_method "hoge_#{val}" do |loop|
           return dev_team if loop.nil?
-          __method__.to_s*loop
+          "#{__method__}"*loop
         end
       end
     end
@@ -40,14 +40,14 @@ module OriginalAccessor
   def self.included(base)
     base.class_eval do 
 			def self.my_attr_accessor(*args)
-				args.each do |arg|
-					self.instance_eval do
+				self.instance_eval do # selfはA3のクラス
+					args.each do |arg|
+						# selfはクラスなのでdefine_methodが使用可
             define_method "#{arg}", proc { instance_variable_get "@#{arg}" }
-            define_method "#{arg}=" do |val|
+            define_method "#{arg}=" do |val| 
 							instance_variable_set "@#{arg}", val
-							if [TrueClass, FalseClass].include? val.class
-								define_singleton_method "#{arg}?", proc { send arg }
-							end
+							# selfがインスタンスなのでmoduleに定義されてるdefine_methodは使用不可
+							define_singleton_method "#{arg}?", proc { send arg } if [TrueClass, FalseClass].include? val.class
             end
           end
         end
