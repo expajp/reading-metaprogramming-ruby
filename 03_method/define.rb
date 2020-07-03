@@ -39,10 +39,18 @@ end
 module OriginalAccessor
   def self.included(base)
     base.class_eval do 
-      def self.my_attr_accessor(*args)
-        args.each do |arg|
-					self.class_eval { attr_accessor arg } 
-				end
+			def self.my_attr_accessor(*args)
+				args.each do |arg|
+					self.instance_eval do
+            define_method "#{arg}", proc { instance_variable_get "@#{arg}" }
+            define_method "#{arg}=" do |val|
+							instance_variable_set "@#{arg}", val
+							if [TrueClass, FalseClass].include? val.class
+								define_singleton_method "#{arg}?", proc { send arg }
+							end
+            end
+          end
+        end
       end
     end
   end
