@@ -39,15 +39,15 @@ end
 module OriginalAccessor
   def self.included(base)
     base.class_eval do 
-			def self.my_attr_accessor(*args)
-				self.instance_eval do # selfはA3のクラス
-					args.each do |arg|
-						# selfはクラスなのでdefine_methodが使用可
+      def self.my_attr_accessor(*args)
+        self.instance_eval do # selfはA3のクラス
+          args.each do |arg|
+            # selfはクラスなのでdefine_methodが使用可
             define_method "#{arg}", proc { instance_variable_get "@#{arg}" }
             define_method "#{arg}=" do |val| 
-							instance_variable_set "@#{arg}", val
-							# selfがインスタンスなのでmoduleに定義されてるdefine_methodは使用不可
-							define_singleton_method "#{arg}?", proc { send arg } if [TrueClass, FalseClass].include? val.class
+              instance_variable_set "@#{arg}", val
+              # selfがインスタンスなのでmoduleに定義されてるdefine_methodは使用不可
+              define_singleton_method "#{arg}?", proc { send arg } if [TrueClass, FalseClass].include? val.class
             end
           end
         end
