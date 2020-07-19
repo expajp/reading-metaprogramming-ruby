@@ -81,7 +81,19 @@ end
 # TryOver3::A4.runners = [:Hoge]
 # TryOver3::A4::Hoge.run
 # # => "run Hoge"
+class TryOver3::A4
+  def self.runners=(arr)
+    @runners = arr
+  end
 
+  def self.const_missing(const_name)
+    if @runners.include? const_name
+      Class.new { define_singleton_method(:run) { "run #{const_name}" } }
+    else
+      super
+    end
+  end
+end
 
 # Q5. チャレンジ問題！ 挑戦する方はテストの skip を外して挑戦してみてください。
 #
