@@ -33,8 +33,8 @@ end
 class TryOver3::A2Proxy
   attr_reader :source
 
-  def initialize(a2)
-    @source = a2
+  def initialize(a2_instance)
+    @source = a2_instance
   end
 
   def respond_to?(method_name)
@@ -150,38 +150,47 @@ end
 
 module TryOver3::TaskHelper
   def self.included(klass)
-    klass.define_singleton_method :task do |name, &task_block|
-      @tasks ||= {}
-      @tasks[name] = task_block
-    end
-
-    klass.define_singleton_method :run_task do |name|
-      puts "start #{Time.now}"
-      block_return = @tasks[name].call
-      puts "finish #{Time.now}"
-      block_return
-    end
-
-    klass.define_singleton_method :method_missing do |method_name, *args|
-      if @tasks.keys.include? method_name
-        self.run_task(method_name)
-      else
-        super(method_name, *args)
+    klass.singleton_class.class_eval do
+      def task(name, &task_block)
+        @tasks ||= {}
+        @tasks[name] = task_block
       end
-    end
 
-    klass.define_singleton_method :const_missing do |const_name|
-      symbolized_name = const_name.downcase.to_sym
-      if @tasks.keys.include? symbolized_name
-        new_klass_name = const_name.to_s.split("_").map{ |w| w[0] = w[0].upcase; w }.join
-        Class.new do
-          define_singleton_method :run do
-            warn "Warning: #{klass.name}::#{const_name}.run is deprecated"
-            klass.run_task(symbolized_name)
-          end
+      def method_missing(method_name, *args)
+        if @tasks.keys.include? method_name
+          proc_as_task(method_name.to_sym).call
+        else
+          super(method_name, *args)
         end
-      else
-        super(const_name)
+      end
+
+      def const_missing(const_name)
+        symbolized_name = const_name.downcase.to_sym
+  
+        if @tasks.keys.include? symbolized_name
+          warning_message = "Warning: #{self.ancestors.first}::#{const_name}.run is deprecated"
+          task = proc_as_task(symbolized_name)
+  
+          Class.new do
+            define_singleton_method :run do
+              warn warning_message
+              task.call
+            end
+          end
+        else
+          super(const_name)
+        end
+      end
+
+      private 
+
+      def proc_as_task(name)
+        proc do
+          puts "start #{Time.now}"
+          block_return = @tasks[name].call
+          puts "finish #{Time.now}"
+          block_return  
+        end
       end
     end
   end
