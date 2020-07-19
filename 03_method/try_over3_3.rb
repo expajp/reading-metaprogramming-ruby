@@ -98,31 +98,32 @@ end
 # Q5. チャレンジ問題！ 挑戦する方はテストの skip を外して挑戦してみてください。
 #
 # TryOver3::TaskHelper という include すると task というクラスマクロが与えられる以下のようなモジュールがあります。
-module TryOver3::TaskHelper
-  def self.included(klass)
-    klass.define_singleton_method :task do |name, &task_block|
-      new_klass = Class.new do
-        define_singleton_method :run do
-          puts "start #{Time.now}"
-          block_return = task_block.call
-          puts "finish #{Time.now}"
-          block_return
-        end
-      end
-      new_klass_name = name.to_s.split("_").map{ |w| w[0] = w[0].upcase; w }.join
-      const_set(new_klass_name, new_klass)
-    end
-  end
-end
+# module TryOver3::TaskHelper
+#   def self.included(klass)
+#     klass.define_singleton_method :task do |name, &task_block|
+#       new_klass = Class.new do
+#         define_singleton_method :run do
+#           puts "start #{Time.now}"
+#           block_return = task_block.call
+#           puts "finish #{Time.now}"
+#           block_return
+#         end
+#       end
+#       new_klass_name = name.to_s.split("_").map{ |w| w[0] = w[0].upcase; w }.join
+#       const_set(new_klass_name, new_klass)
+#     end
+#   end
+# end
 
 # TryOver3::TaskHelper は include することで以下のような使い方ができます
-class TryOver3::A5Task
-  include TryOver3::TaskHelper
+# class TryOver3::A5Task
+#   include TryOver3::TaskHelper
 
-  task :foo do
-    "foo"
-  end
-end
+#   task :foo do
+#     "foo"
+#   end
+# end
+
 # irb(main):001:0> A3Task::Foo.run
 # start 2020-01-07 18:03:10 +0900
 # finish 2020-01-07 18:03:10 +0900
@@ -146,3 +147,50 @@ end
 # start 2020-01-07 18:03:10 +0900
 # finish 2020-01-07 18:03:10 +0900
 # => "foo"
+
+module TryOver3::TaskHelper
+  def self.included(klass)
+    klass.define_singleton_method :task do |name, &task_block|
+      @tasks ||= {}
+      @tasks[name] = task_block
+    end
+
+    klass.define_singleton_method :run_task do |name|
+      puts "start #{Time.now}"
+      block_return = @tasks[name].call
+      puts "finish #{Time.now}"
+      block_return
+    end
+
+    klass.define_singleton_method :method_missing do |method_name, *args|
+      if @tasks.keys.include? method_name
+        self.run_task(method_name)
+      else
+        super(method_name, *args)
+      end
+    end
+
+    klass.define_singleton_method :const_missing do |const_name|
+      symbolized_name = const_name.downcase.to_sym
+      if @tasks.keys.include? symbolized_name
+        new_klass_name = const_name.to_s.split("_").map{ |w| w[0] = w[0].upcase; w }.join
+        Class.new do
+          define_singleton_method :run do
+            warn "Warning: #{klass.name}::#{const_name}.run is deprecated"
+            klass.run_task(symbolized_name)
+          end
+        end
+      else
+        super(const_name)
+      end
+    end
+  end
+end
+
+class TryOver3::A5Task
+  include TryOver3::TaskHelper
+
+  task :foo do
+    "foo"
+  end
+end
