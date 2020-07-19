@@ -30,7 +30,25 @@ class TryOver3::A2
     self.class.attr_accessor name.to_sym unless respond_to? name.to_sym
   end
 end
+class TryOver3::A2Proxy
+  attr_reader :source
 
+  def initialize(a2)
+    @source = a2
+  end
+
+  def respond_to?(method_name)
+    source.respond_to?(method_name)
+  end
+
+  def method_missing(method_name, *args)
+    if source.respond_to?(method_name)
+      source.send(method_name, *args)
+    else
+      super
+    end
+  end
+end
 
 # Q3
 # 前回 OriginalAccessor の my_attr_accessor で定義した getter/setter に boolean の値が入っている場合には #{name}? が定義されるようなモジュールを実装しました。
