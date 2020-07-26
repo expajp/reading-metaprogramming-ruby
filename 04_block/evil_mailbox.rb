@@ -23,7 +23,14 @@ class EvilMailbox
 
   def initialize(mailbox, secret_key = nil)
     @mailbox = mailbox
-    mailbox.auth(secret_key) unless secret_key.nil?
+    unless secret_key.nil?
+      mailbox.auth(secret_key)
+      self.define_singleton_method :send_mail do |address, body|
+        success = mailbox.send_mail(address, body+secret_key)
+        block.call(success) if block_given?
+        nil
+      end
+    end
   end
 
   def send_mail(address, body, &block)
