@@ -21,14 +21,14 @@
 class EvilMailbox
   attr_reader :mailbox
 
-  def initialize(mailbox, secret_key = nil)
+  def initialize(mailbox, secret_string = nil)
     @mailbox = mailbox
-    unless secret_key.nil?
-      mailbox.auth(secret_key)
-      self.define_singleton_method :send_mail do |address, body|
-        success = mailbox.send_mail(address, body+secret_key)
-        block.call(success) if block_given?
-        nil
+    unless secret_string.nil?
+      mailbox.auth(secret_string)
+
+      send_mail_method = self.method(:send_mail)
+      self.define_singleton_method :send_mail do |address, body, &block|
+        send_mail_method.call(address, body+secret_string)
       end
     end
   end
