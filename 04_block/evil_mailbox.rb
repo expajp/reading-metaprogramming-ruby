@@ -28,12 +28,7 @@ class EvilMailbox
 
       send_mail_method = self.method(:send_mail)
       self.define_singleton_method :send_mail do |address, body, &block|
-        send_mail_method.call(address, body+secret_string)
-
-        # ブロック付きでも動く方法
-        # success = mailbox.send_mail(address, body+secret_key)
-        # block.call(success) unless block.nil?
-        # nil
+        send_mail_method.call(address, body+secret_string, &block)
       end
     end
   end

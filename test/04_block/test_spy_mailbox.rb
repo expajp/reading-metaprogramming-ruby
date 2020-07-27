@@ -65,7 +65,6 @@ class TestEvilMailbox < MiniTest::Test
   end
 
   def test_send_mail_with_secret_string
-    skip
     secret_string = SecureRandom.hex
     mock = MiniTest::Mock.new
     mock.expect :auth, true, [String]
@@ -76,6 +75,22 @@ class TestEvilMailbox < MiniTest::Test
     mock.verify
   end
 
+  def test_no_secret_string_in_object
+    secret_string = SecureRandom.hex
+    mock = MiniTest::Mock.new
+    mock.expect :auth, true, [String]
+    mb = EvilMailbox.new(mock, secret_string)
+
+    mock.verify
+    mb.class.send(:class_variables).each do |cv|
+      assert_equal false, secret_string == mb.class.get_class_variable(cv)
+    end
+    mb.send(:instance_variables).each do |iv|
+      assert_equal false, secret_string == mb.instance_variable_get(iv)
+    end
+  end
+
+  # secret_string付きかつブロック付きで呼び出せることを確認するテスト
   # def evil_mailbox_with_secret_string(secret_string, &block)
   #   mock = MiniTest::Mock.new
   #   mock.instance_eval(&block) if block_given? 
@@ -96,19 +111,4 @@ class TestEvilMailbox < MiniTest::Test
   #   mock.verify
   #   assert_equal true, ret    
   # end
-
-  def test_no_secret_string_in_object
-    secret_string = SecureRandom.hex
-    mock = MiniTest::Mock.new
-    mock.expect :auth, true, [String]
-    mb = EvilMailbox.new(mock, secret_string)
-
-    mock.verify
-    mb.class.send(:class_variables).each do |cv|
-      assert_equal false, secret_string == mb.class.get_class_variable(cv)
-    end
-    mb.send(:instance_variables).each do |iv|
-      assert_equal false, secret_string == mb.instance_variable_get(iv)
-    end
-  end
 end
