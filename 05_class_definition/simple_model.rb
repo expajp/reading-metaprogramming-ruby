@@ -14,4 +14,34 @@
 # 3. 履歴がある場合、すべての操作履歴を放棄し、値も初期状態に戻す `restore!` メソッドを作成する
 
 module SimpleModel
+  def self.included(base)
+    base.define_singleton_method :attr_accessor do |*attributes|
+      super(*attributes)
+      base.define_method :changed? do
+        @_attr_changelog.values.any?
+      end
+      
+      attributes.each do |attr|
+        base.define_method "#{attr}" do
+          @_attr_changelog[attr].nil? ? self.instance_variable_get("@#{attr}") : @_attr_changelog[attr].last
+        end
+        base.define_method "#{attr}=" do |val|
+          @_attr_changelog[attr] ||= []
+          @_attr_changelog[attr] << val
+        end
+        base.define_method "#{attr}_changed?" do
+          !@_attr_changelog[attr].nil?
+        end
+      end
+    end
+  end
+    
+  def initialize(attributes)
+    @_attr_changelog = {}
+    attributes.keys.each { |key| self.instance_variable_set "@#{key}", attributes[key] }
+  end
+
+  def restore!
+    @_attr_changelog = {}
+  end
 end
