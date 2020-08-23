@@ -17,11 +17,9 @@ end
 class A2
   def initialize(arr)
     arr.each do |val|
-      self.class.class_eval do
-        define_method "hoge_#{val}" do |loop|
-          return dev_team if loop.nil?
-          "#{__method__}"*loop
-        end
+      self.define_singleton_method("hoge_#{val}") do |loop|
+        return dev_team if loop.nil?
+        "#{__method__}"*loop
       end
     end
   end
