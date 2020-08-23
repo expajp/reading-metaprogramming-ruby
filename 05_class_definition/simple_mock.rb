@@ -37,3 +37,40 @@
 # obj.imitated_method #=> true
 # obj.called_times(:imitated_method) #=> 2
 # ```
+
+module SimpleMock
+  def expects(method_name, return_value)
+    self.define_singleton_method(method_name) { return_value }
+  end
+
+  def watch(method_name)
+    unless self.respond_to? "#{method_name}_origin"
+      self.define_singleton_method "#{method_name}_origin", self.method(method_name)
+    end
+
+    self.define_singleton_method(method_name) do |*args|
+      @_called_counter[method_name] ||= 0
+      @_called_counter[method_name] += 1
+
+      send "#{method_name}_origin", *args
+    end
+  end
+
+  def called_times(method_name)
+    @_called_counter[method_name] || 0
+  end
+
+  class << self
+    def new
+      mock(Object.new)
+    end
+
+    def mock(obj)
+      obj.instance_variable_set(:@_called_counter, {})
+      class << obj
+        include SimpleMock 
+      end
+      obj
+    end
+  end
+end
